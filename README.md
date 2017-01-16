@@ -1,77 +1,67 @@
 # fleek
 
-Unifying library for the fleek framework
+[![Build Status](https://travis-ci.org/fleekjs/fleek.svg?branch=master)](https://travis-ci.org/fleekjs/fleek)
 
-# V2 Proposal
+Unifying library for the fleek framework. Uses [koa2](https://github.com/koajs/koa/tree/v2.x) as a base to leverage swagger documentation and rapidly build documentation driven code.
 
-This server will act as a central hinge for the V2 versions of the fleek libraries. A more modern modular approach should be taken for V2, detailed below.
+Requirements:
+- Node >= 6.0.0
 
-# The purpose of the fleek module
+# Usage
 
-the fleek module will act as the glue to hold together the individual pieces. this will allow the other components of fleek (router, validator, etc) to keep very limited architectural scope. parsing, route context, and a few other overhead components will be done here, allowing the other modules to have a very specific task that they perform well.
+```
+npm install --save fleek
+```
 
-### Current functionality
+This package is to be used as middleware for [Koa2](https://github.com/koajs/koa/tree/v2.x) to aggregate functionality from the various fleek components:
+- [fleek-context](github.com/fleekjs/fleek-context) - takes koa requests and binds the appropriate swagger path data using [routington](https://www.npmjs.com/package/routington)
+- [fleek-validator](github.com/fleekjs/fleek-validator) - uses the fleek/swagger context to validate incoming requests
+- [fleek-router](github.com/fleekjs/fleek-router) - uses fleek/swagger context to route to provided controllers/operations
 
-- finds swagger source either by receiving an absolute path, a path relative to cwd, a swagger object, or by searching for it in the cwd
-- allows selection and injection of a driver (core server) that extends the `BaseDriver` class. This class is almost 1:1 proxy of koa
-- injects an initial middleware that maps the request route to a swagger path+method definition and stash's the route context in `ctx.fleek.route`
-- injects the full swagger object to `ctx.fleek.swagger`
-- see the examples directory for a working example
+# Examples
 
-
-### Future functionality
-
-- add actionId to ctx injection
-
-# Implementation notes
-
-- routing done via [routington](https://www.npmjs.com/package/routington) (trie over regex for speed)
-
-# tests needed
-
-- unit
-  - routing setup and compilation
-    - test router in mocha by accessing `fleek.router.map` for an object of method-route routington instances
-  - integration
-    - make sure router functions when hit over the wire
-
-## Proposed Example
+For a swagger example, refer to the test [swagger json](https://github.com/fleekjs/fleek-router/blob/master/tests/swagger.json)
 
 ```javascript
-let fleek = require('fleek');
+const Koa = require('koa');
+const fleek = require('fleek');
 
-let router = require('fleek-router');
-let validator = require('fleek-validator');
-let response = require('fleek-response');
-let sockets = require('fleek-sockets');
+const SWAGGER = require('./swagger.json');
 
-let app = fleek('./config/swagger.json'); // implicitly add an app.use middleware to bind fleek/req context
-// let app = fleek(); // Attempts to find swagger docs on its own
-// let app = fleek({ source: './config/swagger.json' }); // additional options
+let app = new Koa();
 
-app.use(sockets()); // binds socket logic
+// Parse the request and bind `context.fleek.context` to the appropriate path+method config using the provided swagger
+app.use(fleek.context(SWAGGER));
 
-app.use(validator()); // binds validation logic
+// Validate the request using the fleek context
+app.use(fleekValidator().catch((ctx, next) => {
+  ctx.body = ctx.fleek.validation; // return the specific failures to the client
+  ctx.status = 400;
+  return Promise.resolve();
+}));
 
-app.use(response()); // binds response logic
+// If `ctx.fleek.context.tags` contains the tag `authenticated`, athenticate the request
+app.use(fleek.router.tag('authenticated', (ctx, next) => {
+  if (someAuthFunction(ctx)) {
+    ctx.body = 'Not authorized';
+    ctx.status = 401;
+    return Promise.resolve();
+  } else return next();
+}))
 
-app.use(function *(next) {
-
-});
-
-// execute as middleware for any endpoint with the user tag
-app.tag('user', function *() {
-
-});
-
-// execute as middleware for any endpoint with the user tag
-app.tags({
-  user: function *() {
-
-  }
-});
-
-app.use(router()); // routes to controllers. router will no longer perform context injection
+// Route to controllers using `ctx.fleek.constext.tag[]` which export CRUD methods, and any specially named exported function using operationId
+app.use(router.controllers(`${__driname}/controllers`));
+// controllers/
+//  ├── bar.js [exports: get(ctx, next)]
+//  ├── foo
+//  |    └── biz.js [exports: post(ctx, next)]
+//  └── */** [exports: createBar(ctx, next)]
 
 app.listen(3000);
 ```
+
+## Authors
+
+- [John Hofrichter](https://github.com/johnhof)
+
+_Built and maintained with [<img width="15px" src="http://hart.com/wp-content/themes/hart/img/hart_logo.svg">](http://hart.com/) by the [Hart](http://hart.com/) team._
