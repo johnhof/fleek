@@ -34,7 +34,7 @@ let app = new Koa();
 app.use(fleek.context(SWAGGER));
 
 // Validate the request using the fleek context
-app.use(fleekValidator().catch((ctx, next) => {
+app.use(fleek.validator().catch((ctx, next) => {
   ctx.body = ctx.fleek.validation; // return the specific failures to the client
   ctx.status = 400;
   return Promise.resolve();
