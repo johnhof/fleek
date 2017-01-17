@@ -14,6 +14,7 @@ npm install --save fleek
 ```
 
 This package is to be used as middleware for [Koa2](https://github.com/koajs/koa/tree/v2.x) to aggregate functionality from the various fleek components:
+- [fleek-parser](https://github.com/fleekjs/fleek-parser) - parses swagger doc into a more expressive unified object [routington](https://www.npmjs.com/package/routington)
 - [fleek-context](https://github.com/fleekjs/fleek-context) - takes koa requests and binds the appropriate swagger path data using [routington](https://www.npmjs.com/package/routington)
 - [fleek-validator](https://github.com/fleekjs/fleek-validator) - uses the fleek/swagger context to validate incoming requests
 - [fleek-router](https://github.com/fleekjs/fleek-router) - uses fleek/swagger context to route to provided controllers/operations
