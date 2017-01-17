@@ -1,6 +1,6 @@
 {
   "name": "fleek",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Unifying library for the fleek framework",
   "main": "index.js",
   "scripts": {
@@ -20,6 +20,7 @@
   "homepage": "https://github.com/fleekjs/fleek#readme",
   "dependencies": {
     "fleek-context": "^1.0.4",
+    "fleek-parser": "^1.2.5",
     "fleek-router": "^2.0.0",
     "fleek-validator": "^2.0.0"
   },
